@@ -195,7 +195,7 @@ function loadAvatars(race) {
 
   function tryLoad() {
     const img = document.createElement('img');
-    img.src = `/avatars/${race}/${index}.jpg`;
+    img.src = `avatars/${race}/${index}.jpg`;
     img.onload = () => {
       img.addEventListener('click', () => {
         localStorage.setItem('selectedAvatar', img.src);
