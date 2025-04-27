@@ -173,14 +173,11 @@ const races = [
 
 function getParams() {
   const params = new URLSearchParams(window.location.search);
-  const entries = Object.fromEntries(params.entries());
-
-  // Fix: remove trailing dash after hp if it exists
-  if (entries.hp && entries.hp.endsWith('-')) {
-    entries.hp = entries.hp.slice(0, -1); // remove the last character (the dash)
+  const cleanedParams = {};
+  for (const [key, value] of params.entries()) {
+    cleanedParams[key] = value.replace(/-+$/, ''); // Remove trailing dashes
   }
-
-  return entries;
+  return cleanedParams;
 }
 
 
