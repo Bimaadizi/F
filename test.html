@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RPG Character Sheet</title>
+  <style>
+    body {
+      background: #f4f0e6;
+      font-family: 'Georgia', serif;
+      padding: 2rem;
+      color: #333;
+    }
+    .sheet {
+      background: #fff;
+      border: 3px solid #555;
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    h1, h2 {
+      margin-bottom: 1rem;
+    }
+    .warning, .discrepancy {
+      background: #ffe8e8;
+      border: 2px solid #ff0000;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      font-weight: bold;
+      color: #990000;
+    }
+    .stat {
+      margin: 0.5rem 0;
+      text-align: left;
+    }
+    .label {
+      font-weight: bold;
+    }
+    .avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 1rem;
+      border: 3px solid #555;
+    }
+    .avatar-selection img {
+      width: 80px;
+      height: 80px;
+      margin: 0.5rem;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border 0.3s;
+    }
+    .avatar-selection img:hover {
+      border: 2px solid #555;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app" class="sheet">
+  <h1>Character Sheet</h1>
+  <div id="warning" class="warning" style="display: none;">Warning: Some expected stats are missing!</div>
+  <div id="discrepancy" class="discrepancy" style="display: none;">Discrepancy detected with previously saved character!</div>
+  <img id="avatar" class="avatar" src="" alt="Avatar" style="display:none;">
+  <div id="character"></div>
+  <h2>Select Your Avatar</h2>
+  <div class="avatar-selection" id="avatarSelection"></div>
+</div>
+
+<script>
+function getParams() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    name: params.get('name'),
+    class: params.get('class'),
+    race: params.get('race'),
+    hp: params.get('hp'),
+    str: params.get('str'),
+    dex: params.get('dex'),
+    con: params.get('con'),
+    int: params.get('int'),
+    wis: params.get('wis'),
+    cha: params.get('cha')
+  };
+}
+
+function renderCharacter(data) {
+  const container = document.getElementById('character');
+  let html = '';
+  const fields = [
+    { key: 'name', label: 'Name' },
+    { key: 'class', label: 'Class' },
+    { key: 'race', label: 'Race' },
+    { key: 'hp', label: 'HP' },
+    { key: 'str', label: 'Strength' },
+    { key: 'dex', label: 'Dexterity' },
+    { key: 'con', label: 'Constitution' },
+    { key: 'int', label: 'Intelligence' },
+    { key: 'wis', label: 'Wisdom' },
+    { key: 'cha', label: 'Charisma' }
+  ];
+
+  let missingImportant = false;
+  fields.forEach(field => {
+    if (data[field.key]) {
+      html += `<div class="stat"><span class="label">${field.label}:</span> ${data[field.key]}</div>`;
+    } else if (['name', 'class', 'hp'].includes(field.key)) {
+      missingImportant = true;
+    }
+  });
+
+  container.innerHTML = html;
+
+  if (missingImportant) {
+    document.getElementById('warning').style.display = 'block';
+  }
+}
+
+function saveCharacter(data) {
+  localStorage.setItem('savedCharacter', JSON.stringify(data));
+}
+
+function loadCharacter() {
+  return JSON.parse(localStorage.getItem('savedCharacter'));
+}
+
+function compareCharacters(saved, current) {
+  if (!saved) return;
+  if (saved.name !== current.name || saved.class !== current.class) {
+    document.getElementById('discrepancy').style.display = 'block';
+  }
+}
+
+function renderAvatars() {
+  const container = document.getElementById('avatarSelection');
+  let index = 1;
+
+  function loadNextAvatar() {
+    const img = document.createElement('img');
+    img.src = `./avatars/${index}.jpg`;
+    img.onerror = () => {
+      // Stop when no more images are found
+      if (index === 1) container.innerHTML = "<p>No avatars found.</p>";
+      return;
+    };
+    img.onload = () => {
+      img.onclick = () => {
+        localStorage.setItem('avatar', img.src);
+        document.getElementById('avatar').src = img.src;
+        document.getElementById('avatar').style.display = 'block';
+      };
+      container.appendChild(img);
+      index++;
+      loadNextAvatar();
+    };
+  }
+
+  loadNextAvatar();
+}
+
+function loadAvatar() {
+  const avatar = localStorage.getItem('avatar');
+  if (avatar) {
+    const img = document.getElementById('avatar');
+    img.src = avatar;
+    img.style.display = 'block';
+  }
+}
+
+const characterData = getParams();
+const savedCharacter = loadCharacter();
+
+renderCharacter(characterData);
+compareCharacters(savedCharacter, characterData);
+saveCharacter(characterData);
+renderAvatars();
+loadAvatar();
+</script>
+
+</body>
+</html>
