@@ -316,5 +316,82 @@ loadSavedCharacters();
 initialAvatarCheck();
 </script>
 
+
+
+<!-- D20 Roll Modal -->
+<div id="d20Modal" class="modal" style="background: rgba(0,0,0,0.85); flex-direction: column; text-align: center;">
+  <img src="skillcheck-bg.png" alt="Skill Check Banner" style="max-width: 80%; margin-bottom: 1rem;" />
+  <div id="diceArea" style="display: flex; gap: 1rem; justify-content: center; align-items: center; margin-bottom: 1rem;"></div>
+  <div id="modifierText" style="color: white; font-size: 1.5rem; margin-bottom: 1rem;"></div>
+  <button onclick="closeD20Modal()" style="padding: 1rem 2rem;">Continue (Close)</button>
+</div>
+
+<!-- D20 Button -->
+<div onclick="showD20ModalFromParams()" style="position: fixed; top: 60px; right: 10px; z-index: 1000; cursor: pointer;">
+  <img src="d20.png" alt="Roll D20" style="width: 40px; height: 40px;">
+</div>
+
+
+  <script>
+function parseModifier(value) {
+  if (!value) return 0;
+  return parseInt(value.replace(/^n/, '-')) || 0;
+}
+
+function rollD20(advantage = 0) {
+  const roll = () => Math.floor(Math.random() * 20) + 1;
+  const r1 = roll();
+  if (advantage === 1 || advantage === 2) {
+    const r2 = roll();
+    return {
+      rolls: [r1, r2],
+      result: advantage === 1 ? Math.max(r1, r2) : Math.min(r1, r2)
+    };
+  }
+  return { rolls: [r1], result: r1 };
+}
+
+function showD20ModalFromParams() {
+  const params = getParams();
+  if (params.roll !== 'd20') return;
+
+  const modifier = parseModifier(params.mod);
+  const adv = parseInt(params.adv) || 0;
+  const { rolls, result } = rollD20(adv);
+
+  const diceArea = document.getElementById('diceArea');
+  const modText = document.getElementById('modifierText');
+  const modal = document.getElementById('d20Modal');
+
+  diceArea.innerHTML = '';
+  rolls.forEach(r => {
+    const img = document.createElement('img');
+    img.src = `dice/d20-${r}.png`; // You must provide images like d20-1.png to d20-20.png
+    img.style.width = '100px';
+    img.style.height = '100px';
+    img.style.animation = 'spin 1s ease-out';
+    diceArea.appendChild(img);
+  });
+
+  modText.textContent = `Modifier: ${modifier >= 0 ? '+' : ''}${modifier} → Final: ${result + modifier}`;
+  modal.style.display = 'flex';
+}
+
+function closeD20Modal() {
+  document.getElementById('d20Modal').style.display = 'none';
+}
+    
+  </script>
+
+  <style>
+
+    @keyframes spin {
+  0% { transform: rotate(0deg) scale(0.8); opacity: 0; }
+  50% { transform: rotate(180deg) scale(1.2); opacity: 1; }
+  100% { transform: rotate(360deg) scale(1); opacity: 1; }
+}
+
+  </style>
+  
 </body>
 </html>
