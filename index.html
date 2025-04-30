@@ -171,11 +171,11 @@ const races = [
   'orc', 'Other', 'undead'
 ];
 
-function getParams() {
+  function getParams() {
   const params = new URLSearchParams(window.location.search);
   const cleanedParams = {};
   for (const [key, value] of params.entries()) {
-    cleanedParams[key] = value.replace(/-+$/, ''); // Remove trailing dashes
+    cleanedParams[key] = value.replace(/-+$/, '').replace(/_/g, ' '); // Remove trailing dashes and replace underscores
   }
   return cleanedParams;
 }
