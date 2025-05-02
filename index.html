@@ -15,6 +15,16 @@
       align-items: center;
       justify-content: center;
     }
+	
+	.stats-section div {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.25rem 0;
+}
+
+	
+	
     .layout {
       display: grid;
       grid-template-columns: 300px 400px;
@@ -249,14 +259,18 @@ function renderCharacter() {
   stats.forEach(stat => {
     if (data[stat]) {
       statsContainer.innerHTML += `<div>${stat.toUpperCase()}: ${data[stat]}</div>`;
+	
     }
   });
 
   if (data.name) infoContainer.innerHTML += `<div>Name: ${data.name}</div>`;
   if (data.race) infoContainer.innerHTML += `<div>Race: ${data.race}</div>`;
   if (data.class) infoContainer.innerHTML += `<div>Class: ${data.class}</div>`;
+  if (data.alignment) infoContainer.innerHTML += `<div>Alignment: ${data.alignment}</div>`;
+
 
   if (data.level) levelContainer.innerHTML += `<div>Level: ${data.level}</div>`;
+  if (data.exp) levelContainer.innerHTML += `<div>XP: ${data.exp}</div>`;
   if (data.hp) levelContainer.innerHTML += `<div>HP: ${data.hp}</div>`;
 
   const savedAvatar = localStorage.getItem('selectedAvatar');
@@ -264,6 +278,9 @@ function renderCharacter() {
     const avatar = document.getElementById('avatar');
     avatar.src = savedAvatar;
     avatar.style.display = 'inline';
+	
+document.getElementById('stats').style.fontSize = 'calc(14px + 1.3vw)';
+
   }
 }
 
@@ -296,8 +313,6 @@ function loadSavedCharacters() {
     container.appendChild(div);
   }
 }
-
-<!-- help me mr. gpt -->
 
 function newCharacter() {
   if (confirm('Start a new character?')) {
@@ -366,8 +381,8 @@ function rollD20(config = currentRollConfig) {
       const passed = dc !== null ? finalRoll >= dc : null;
       if (passed !== null) {
         resultImg.src = passed
-          ? 'dice-assets/success.png'
-          : 'dice-assets/failure.png';
+          ? 'dice-assets/SUCCESS.png'
+          : 'dice-assets/FAILURE.png';
         resultImg.style.display = 'block';
       }
     }
