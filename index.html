@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RPG Character Viewer</title>
+  <title>UI</title>
   <style>
     body {
       margin: 0;
@@ -171,7 +171,7 @@ const races = [
   'orc', 'Other', 'undead'
 ];
 
-  function getParams() {
+function getParams() {
   const params = new URLSearchParams(window.location.search);
   const cleanedParams = {};
   for (const [key, value] of params.entries()) {
@@ -179,6 +179,7 @@ const races = [
   }
   return cleanedParams;
 }
+
 
 
 function loadRaces() {
@@ -296,6 +297,8 @@ function loadSavedCharacters() {
   }
 }
 
+<!-- help me mr. gpt -->
+
 function newCharacter() {
   if (confirm('Start a new character?')) {
     localStorage.removeItem('selectedAvatar');
@@ -309,11 +312,305 @@ function initialAvatarCheck() {
   }
 }
 
-loadRaces();
-renderCharacter();
-loadSavedCharacters();
-initialAvatarCheck();
+// --- D20 Roller ---
+let currentRollConfig = { adv: false, mod: 0, dc: null, check: '' };
+
+function getRollValue() {
+  return Math.floor(Math.random() * 20) + 1;
+}
+
+function rollD20(config = currentRollConfig) {
+  const { adv, mod, dc, check } = config;
+  currentRollConfig = { adv, mod, dc, check }; // Store last config for reroll
+
+  const numberDiv = document.getElementById('rollerDiceNumber');
+  const totalDiv = document.getElementById('rollerTotal');
+  const dcDiv = document.getElementById('rollerDC');
+  const modDiv = document.getElementById('rollerMod');
+  const checkOverlay = document.getElementById('rollerCheckOverlay');
+  const resultImg = document.getElementById('rollerResultImage');
+  const die = document.querySelector('.roller-dice-textured');
+
+  numberDiv.classList.remove('natural20');
+  die.classList.remove('natural20');
+  resultImg.src = '';
+  resultImg.style.display = 'none';
+  totalDiv.textContent = '';
+
+  modDiv.textContent = `Modifier: ${mod >= 0 ? '+' : ''}${mod}`;
+  dcDiv.textContent = dc !== null ? `DC: ${dc}` : '';
+  checkOverlay.textContent = check
+    ? `${check.charAt(0).toUpperCase() + check.slice(1)}`
+    : 'Skill Check';
+
+  let roll1 = getRollValue();
+  let roll2 = adv ? getRollValue() : null;
+  let baseRoll = adv ? Math.max(roll1, roll2) : roll1;
+  let finalRoll = baseRoll + mod;
+
+  let step = 0;
+  const interval = setInterval(() => {
+    const tempRoll = getRollValue();
+    numberDiv.textContent = tempRoll;
+    step++;
+    if (step > 15) {
+      clearInterval(interval);
+      numberDiv.textContent = baseRoll;
+      totalDiv.textContent = `Total: ${baseRoll} ${mod >= 0 ? '+' : ''}${mod} = ${finalRoll}`;
+
+      if (baseRoll === 20) {
+        numberDiv.classList.add('natural20');
+        die.classList.add('natural20');
+      }
+
+      const passed = dc !== null ? finalRoll >= dc : null;
+      if (passed !== null) {
+        resultImg.src = passed
+          ? 'dice-assets/success.png'
+          : 'dice-assets/failure.png';
+        resultImg.style.display = 'block';
+      }
+    }
+  }, 100);
+}
+
+function toggleRoller() {
+  document.getElementById('rollerModal').style.display = 'flex';
+
+  const params = getParams();
+  const adv = params.adv === "true";
+  const mod = parseInt(params.mod || "0");
+  const dc = params.dc ? parseInt(params.dc) : null;
+  const check = params.check || '';
+
+  rollD20({ adv, mod, dc, check });
+}
+
+function closeRoller() {
+  document.getElementById('rollerModal').style.display = 'none';
+}
+
+function handleRollFromURL() {
+  const params = getParams();
+  if (!params.roll || !params.roll.includes("d20")) return;
+
+  document.getElementById("rollerModal").style.display = "flex";
+
+  const adv = params.adv === "true";
+  const mod = parseInt(params.mod || "0");
+  const dc = params.dc ? parseInt(params.dc) : null;
+  const check = params.check || '';
+
+  rollD20({ adv, mod, dc, check });
+}
+
+window.addEventListener("load", () => {
+  loadRaces();
+  renderCharacter();
+  loadSavedCharacters();
+  initialAvatarCheck();
+  handleRollFromURL();
+});
 </script>
 
-</body>
-</html>
+<!-- 🎲 Floating Dice Button -->
+<div class="top-bar" style="right: 60px;" onclick="toggleRoller()">🎲</div>
+
+<!-- 🎲 Fullscreen D20 Roller Modal -->
+<div class="modal" id="rollerModal">
+  <div class="roller-bg">
+
+    <!-- Fixed Top Section -->
+    <div class="roller-fixed-top">
+      <div class="roller-check-overlay" id="rollerCheckOverlay">Skill Check</div>
+      <img src="dice-assets/skill-banner.png" class="roller-banner" />
+      <div id="rollerDC" class="roller-dc">DC: </div>
+    </div>
+
+    <!-- Die and Number -->
+    <div class="roller-dice-textured" onclick="rollD20(currentRollConfig)">
+      <img src="dice-assets/dice-frame.png" class="roller-dice-bg" />
+      <div class="roller-dice-number" id="rollerDiceNumber">?</div>
+    </div>
+
+    <!-- Modifier Total -->
+    <div id="rollerTotal" class="roller-total"></div>
+
+    <!-- Modifier Display -->
+    <div class="roller-mod-wrap">
+      <img src="dice-assets/modifier-box.png" class="roller-mod-box" />
+      <div id="rollerMod" class="roller-mod-value">Modifier: +0</div>
+    </div>
+
+    <!-- Success/Failure -->
+    <img id="rollerResultImage" class="roller-result-img" src="" style="display:none;" />
+
+    <!-- Close Button -->
+    <img src="dice-assets/continue-button.png" onclick="closeRoller()" class="roller-close-btn" />
+  </div>
+</div>
+
+<!-- 🎨 Modal Styles -->
+<style>
+#rollerModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  justify-content: center;
+  align-items: start;
+  padding: 0;
+}
+
+.roller-bg {
+  position: relative;
+  width: 90vw;
+  max-width: 600px;
+  height: 100vh;
+  background: url('dice-assets/roller-bg.png') no-repeat center center / cover;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: start;
+  padding: 2rem;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+}
+
+
+.roller-bg::before,
+.roller-bg::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 10px; /* width of bar */
+  height: 100%;
+  background: white; /* default solid white */
+  z-index: 1;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+/* Left bar */
+.roller-bg::before {
+  left: 15px;
+}
+
+/* Right bar */
+.roller-bg::after {
+  right: 15px;
+}
+
+
+.roller-fixed-top {
+  position: relative;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.roller-banner {
+  width: 600px;
+  display: block;
+  margin: 0 auto;
+}
+
+.roller-check-overlay {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 3.2rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.roller-dc {
+  font-size: 1.5rem;
+  color: white;
+  margin-top: 0.25rem;
+}
+
+.roller-dice-textured {
+  position: relative;
+  width: clamp(160px, 25vw, 300px);
+  height: clamp(160px, 25vw, 300px);
+  margin: 1rem 0;
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+
+.roller-dice-bg {
+  display: block;
+  margin: 0 auto;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+ 
+
+}
+
+.roller-dice-number {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(2rem, 6vw, 5rem);
+  font-weight: bold;
+  color: black;
+  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.7);
+  font-family: 'Garamond';
+  transition: transform 0.3s ease, font-size 0.3s ease;
+}
+
+.roller-dice-textured.natural20 {
+  transform: scale(1.3);
+}
+
+.roller-dice-number.natural20 {
+  font-size: clamp(3rem, 8vw, 6rem);
+  color: #ffd700;
+}
+
+.roller-total {
+  color: white;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.roller-mod-wrap {
+  position: relative;
+  margin-top: 1rem;
+}
+
+.roller-mod-box {
+  width: 260px;
+}
+
+.roller-mod-value {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 1.4rem;
+  font-weight: bold;
+  padding-top: 0.5rem;
+  text-align: center;
+}
+
+.roller-result-img {
+  width: 200px;
+  margin-top: 1.5rem;
+}
+
+.roller-close-btn {
+  width: 200px;
+  margin-top: 1.5rem;
+  cursor: pointer;
+}
+</style>
